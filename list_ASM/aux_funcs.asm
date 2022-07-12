@@ -1,6 +1,7 @@
 _getChar:
  	mov ah, 00h
 	int 16h
+  xor ah, ah
 	ret
 
 _putChar:
