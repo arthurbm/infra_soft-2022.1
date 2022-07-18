@@ -1,8 +1,8 @@
 org 0x7c00
 jmp 0x0000:main
 
-_dataQ3:
-  stringQ3 times 11 db 0x00
+_dataQ4:
+  stringQ4 times 11 db 0x00
   position times 11 db 0x00
 
 main:
@@ -11,7 +11,7 @@ main:
   int 10h
   xor dx, dx
 
-  mov di, stringQ3
+  mov di, stringQ4
   call gets
 
   mov di, position
@@ -20,7 +20,7 @@ main:
 	mov si, position
 	xor ax, ax
 	
-	call findcQ3
+	call findcQ4
   call _end
   
 _putChar:
@@ -91,10 +91,10 @@ gets:
 		call _endl_global
 		ret
 	
-findcQ3:
+findcQ4:
 	mov al, byte[si]
 	sub al, '1'
-	mov di, stringQ3
+	mov di, stringQ4
 
 	.loop1:
 		cmp al, 0
