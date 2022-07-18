@@ -244,7 +244,7 @@ start:
             call _amarelo
 
         notAmarelo:
-            mov bl, 5
+            ; mov bl, 5
             ; call _naoexiste
             ; call finish
 
