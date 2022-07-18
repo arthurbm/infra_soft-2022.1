@@ -8,10 +8,12 @@ putchar:
 	mov ah, 0x0e
 	int 10h
 	ret
+
 getchar:
 	mov ah, 0x00
 	int 16h
 	ret
+
 delchar:
 	mov al, 0x08					; backspace
 	call putchar
@@ -20,6 +22,7 @@ delchar:
 	mov al, 0x08					; backspace
 	call putchar
 	ret
+
 endl:
 	mov al, 0x0a					; line feed
 	call putchar
@@ -48,6 +51,7 @@ prints:							; mov si, string
 		jmp .loop
 	.endloop:
 	ret
+
 reverse:						; mov si, string
 	mov di, si
 	xor cx, cx					; zerar contador
@@ -64,6 +68,7 @@ reverse:						; mov si, string
 		stosb
 		loop .loop2
 	ret
+
 tostring:						; mov ax, int / mov di, string
 	push di
 	.loop1:
@@ -88,7 +93,8 @@ tostring:						; mov ax, int / mov di, string
 		stosb
 		call reverse
 		ret
-gets:							; mov di, string
+
+gets:					; mov di, string
 	xor cx, cx					; zerar contador
 	.loop1:
 		call getchar
@@ -117,6 +123,7 @@ gets:							; mov di, string
 	stosb
 	call endl
 	ret
+
 stoi:							; mov si, string
 	xor cx, cx
 	xor ax, ax
@@ -135,51 +142,64 @@ stoi:							; mov si, string
 	.endloop1:
 	ret
 
+_clear:
+  mov ah, 0
+  mov al, 03h
+  int 10h
+  ret
+
 main:
 	xor ax, ax
 	mov ds, ax
 	mov es, ax
-    mov di, string
-    call gets
-    mov si, string
+  xor dx, dx
+  xor cx, cx
+  xor si, si
+
+	call _clear
+
+  mov di, string
+  call gets
+  mov si, string
 	call reverse
-    mov si, string
-    mov cx, 1
-    xor ax,ax
-    .loop5:
-            push ax
-            lodsb
-            cmp al,0
-            je .endloop5
-            xor ah,ah
-            sub al,48
-            mul cx
-            pop bx
-            add ax,bx
-            push ax
-            mov ax,cx
-            mov bx,10
-            mul bx
-            mov cx,ax
-            pop ax
-            jmp .loop5
-     .endloop5:
-                pop ax
-                mov bx,ax
-                mov cx,1
-                xor ax,ax
-                .loop6:
-                        cmp cx,bx
-                        ja .endloop6
-                        add ax,cx
-                        inc cx
-                        jmp .loop6
-                .endloop6:
-                
-                mov di,string
-                call tostring
-                mov si, string
-                call prints
+  mov si, string
+
+  mov cx, 1
+  xor ax,ax
+  .loop5:
+      push ax
+      lodsb
+      cmp al,0
+      je .endloop5
+      xor ah,ah
+      sub al,48
+      mul cx
+      pop bx
+      add ax,bx
+      push ax
+      mov ax,cx
+      mov bx,10
+      mul bx
+      mov cx,ax
+      pop ax
+      jmp .loop5
+    .endloop5:
+      pop ax
+      mov bx,ax
+      mov cx,1
+      xor ax,ax
+      .loop6:
+        cmp cx,bx
+        ja .endloop6
+        add ax,cx
+        inc cx
+        jmp .loop6
+      .endloop6:
+      
+      mov di,string
+      call tostring
+      mov si, string
+      call prints
                 
     
 	
