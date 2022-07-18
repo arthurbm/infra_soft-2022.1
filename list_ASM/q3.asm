@@ -1,11 +1,11 @@
 org 0x7c00; endereço de memória onde o programa vai ser carregado
 jmp 0x0000: start; Função inicial
 
-frase db "Nao existe", 10, 10, 0; reserva espaço na memória para a string
 azul db "AZUL", 10, 0; reserva espaço na memória para a string
 vermelho db "VERMELHO", 10, 0; reserva espaço na memória para a string
 verde db "VERDE", 10, 0; reserva espaço na memória para a string
 amarelo db "AMARELO", 10, 0; reserva espaço na memória para a string
+naoExiste db "NAO EXISTE", 10, 10, 0;
 
 _azul:
     mov al, 9
@@ -26,6 +26,11 @@ _verde:
 _amarelo:
     mov bl, 14
     mov si, amarelo; faz si apontar para o início da frase
+    ret
+
+_naoexiste:
+    mov bl, 5
+    mov si, naoExiste;
     ret
 
 %macro compareAzul 0
@@ -196,7 +201,7 @@ start:
     mov ds, ax; zera ds
     mov es, ax; zera es
     mov bl, 5
-    mov si, frase; faz si apontar para o início da frase
+    mov si, naoExiste; faz si apontar para o início da frase
 
     mov al, 13h
     mov ah, 0
@@ -237,10 +242,14 @@ start:
         notVerde:
             compareAmarelo
             call _amarelo
-        
+
         notAmarelo:
+            mov bl, 5
+            ; call _naoexiste
+            ; call finish
 
     finish:
+        ; call _naoexiste
         call print; chama a função que printa um char da string
 
 times 510 - ($ - $$) db 0
