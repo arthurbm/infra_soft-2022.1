@@ -1,7 +1,7 @@
 org 0x7c00; endereço de memória onde o programa vai ser carregado
 jmp 0x0000: start; Função inicial
 
-frase db "Nao existe", 10, 10, 0; reserva espaço na memória para a string
+frase db "NAO EXISTE", 10, 10, 0; reserva espaço na memória para a string
 azul db "AZUL", 10, 0; reserva espaço na memória para a string
 vermelho db "VERMELHO", 10, 0; reserva espaço na memória para a string
 verde db "VERDE", 10, 0; reserva espaço na memória para a string
