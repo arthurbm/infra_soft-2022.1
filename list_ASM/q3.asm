@@ -1,15 +1,15 @@
 org 0x7c00; endereço de memória onde o programa vai ser carregado
 jmp 0x0000: start; Função inicial
 
+frase db "Nao existe", 10, 10, 0; reserva espaço na memória para a string
 azul db "AZUL", 10, 0; reserva espaço na memória para a string
 vermelho db "VERMELHO", 10, 0; reserva espaço na memória para a string
 verde db "VERDE", 10, 0; reserva espaço na memória para a string
 amarelo db "AMARELO", 10, 0; reserva espaço na memória para a string
-naoExiste db "NAO EXISTE", 10, 10, 0;
 
 _azul:
     mov al, 9
-    mov bl, 9
+    mov bl, 1
     mov si, azul; faz si apontar para o início da frase
     ret
 
@@ -26,11 +26,6 @@ _verde:
 _amarelo:
     mov bl, 14
     mov si, amarelo; faz si apontar para o início da frase
-    ret
-
-_naoexiste:
-    mov bl, 5
-    mov si, naoExiste;
     ret
 
 %macro compareAzul 0
@@ -62,20 +57,20 @@ _naoexiste:
 
     mov di, sp
 
-    mov bl, [di]
-    cmp bl, 'L'
+    mov bh, [di]
+    cmp bh, 'L'
     jne notAzul2
 
-    mov bl, [di+2]
-    cmp bl, 'U'
+    mov bh, [di+2]
+    cmp bh, 'U'
     jne notAzul2
 
-    mov bl, [di+4]
-    cmp bl, 'Z'
+    mov bh, [di+4]
+    cmp bh, 'Z'
     jne notAzul2
 
-    mov bl, [di+6]
-    cmp bl, 'A'
+    mov bh, [di+6]
+    cmp bh, 'A'
     jne notAzul2
 %endmacro
 
@@ -86,36 +81,36 @@ _naoexiste:
 
     mov di, sp
 
-    mov bl, [di]
-    cmp bl, 'o'
+    mov bh, [di]
+    cmp bh, 'o'
     jne notVermelho
 
-    mov bl, [di+2]
-    cmp bl, 'h'
+    mov bh, [di+2]
+    cmp bh, 'h'
     jne notVermelho
 
-    mov bl, [di+4]
-    cmp bl, 'l'
+    mov bh, [di+4]
+    cmp bh, 'l'
     jne notVermelho
 
-    mov bl, [di+6]
-    cmp bl, 'e'
+    mov bh, [di+6]
+    cmp bh, 'e'
     jne notVermelho
 
-    mov bl, [di+8]
-    cmp bl, 'm'
+    mov bh, [di+8]
+    cmp bh, 'm'
     jne notVermelho
 
-    mov bl, [di+10]
-    cmp bl, 'r'
+    mov bh, [di+10]
+    cmp bh, 'r'
     jne notVermelho
 
-    mov bl, [di+12]
-    cmp bl, 'e'
+    mov bh, [di+12]
+    cmp bh, 'e'
     jne notVermelho
 
-    mov bl, [di+14]
-    cmp bl, 'v'
+    mov bh, [di+14]
+    cmp bh, 'v'
     jne notVermelho
 %endmacro
 
@@ -125,24 +120,24 @@ _naoexiste:
 
     mov di, sp
 
-    mov bl, [di]
-    cmp bl, 'e'
+    mov bh, [di]
+    cmp bh, 'e'
     jne notVerde
 
-    mov bl, [di+2]
-    cmp bl, 'd'
+    mov bh, [di+2]
+    cmp bh, 'd'
     jne notVerde
 
-    mov bl, [di+4]
-    cmp bl, 'r'
+    mov bh, [di+4]
+    cmp bh, 'r'
     jne notVerde
 
-    mov bl, [di+6]
-    cmp bl, 'e'
+    mov bh, [di+6]
+    cmp bh, 'e'
     jne notVerde
 
-    mov bl, [di+8]
-    cmp bl, 'v'
+    mov bh, [di+8]
+    cmp bh, 'v'
     jne notVerde
 %endmacro
 
@@ -152,32 +147,32 @@ _naoexiste:
 
     mov di, sp
 
-    mov bl, [di]
-    cmp bl, 'o'
+    mov bh, [di]
+    cmp bh, 'o'
     jne notAmarelo
 
-    mov bl, [di+2]
-    cmp bl, 'l'
+    mov bh, [di+2]
+    cmp bh, 'l'
     jne notAmarelo
 
-    mov bl, [di+4]
-    cmp bl, 'e'
+    mov bh, [di+4]
+    cmp bh, 'e'
     jne notAmarelo
 
-    mov bl, [di+6]
-    cmp bl, 'r'
+    mov bh, [di+6]
+    cmp bh, 'r'
     jne notAmarelo
 
-    mov bl, [di+8]
-    cmp bl, 'a'
+    mov bh, [di+8]
+    cmp bh, 'a'
     jne notAmarelo
 
-    mov bl, [di+10]
-    cmp bl, 'm'
+    mov bh, [di+10]
+    cmp bh, 'm'
     jne notAmarelo
 
-    mov bl, [di+12]
-    cmp bl, 'a'
+    mov bh, [di+12]
+    cmp bh, 'a'
     jne notAmarelo
 %endmacro
 
@@ -201,7 +196,7 @@ start:
     mov ds, ax; zera ds
     mov es, ax; zera es
     mov bl, 5
-    mov si, naoExiste; faz si apontar para o início da frase
+    mov si, frase; faz si apontar para o início da frase
 
     mov al, 13h
     mov ah, 0
@@ -224,6 +219,8 @@ start:
         jmp getString
     
     done:
+        mov bl, 5
+
         compareAzul
         call _azul
 
@@ -242,14 +239,10 @@ start:
         notVerde:
             compareAmarelo
             call _amarelo
-
+        
         notAmarelo:
-            ; mov bl, 5
-            ; call _naoexiste
-            ; call finish
 
     finish:
-        ; call _naoexiste
         call print; chama a função que printa um char da string
 
 times 510 - ($ - $$) db 0
