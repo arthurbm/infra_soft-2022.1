@@ -3,8 +3,6 @@ jmp 0x0000:start
 
 data:
     ; dados da interface console
-        texto_menu_console db 'PLAYSTATION 6', 0                  ; texto console
-        texto_menu_pong db 'PRESSIONE ESPACO', 0                    ; texto jogar Snake console
 
         objeto_x: dw 30
         objeto_y: dw 20
@@ -37,7 +35,6 @@ data:
         
         texto_main_menu db 'MENU PRINCIPAL', 0                  ; texto main menu
         texto_jogar db 'JOGAR - pressione ESPACO', 0                 ; texto jogar
-        texto_sair_jogo db 'Pressione N para sair de jogo', 0   ; texto sair do jogo
         texto_jogador db 'USE AS SETAS CIMA/BAIXO', 0                       ; texto jogador 2
         texto_inst_jogador db 'PARA MOVER A BARRA', 0        ; texto inst jogador 2
         
@@ -138,33 +135,14 @@ print_boundaries:
     ret
 
 jogar_pong:
+    call limpar_tela
+
     mov al, 1
     mov [game_status], al
     xor al, al
     mov [tela_atual], al
 
     jmp pong_loop
-
-menu_console:
-    call limpar_tela
-
-    print_string 04h, 06h, texto_menu_console
-
-    print_string 0Ah, 06h, texto_menu_pong
-
-
-    .espera_tecla:
-        ; espera por um caracter
-        mov ah, 00h
-        int 16h          ; salva o caracter em al
-
-        cmp al, ' '
-        je jogar_pong
-
-        jmp .espera_tecla
-
-
-    jmp menu_console
 
 reset_cor:
     mov al, 1
@@ -201,11 +179,6 @@ print_UI:
     mov ah, 02h                     ; escolher a posição do cursor
     mov dh, 04h                     ; escolher a linha
     mov dl, 21h                     ; escolher a coluna
-    int 10h
-
-    mov ah, 0Eh                     ; escrever caracter
-    mov al, [texto_jogador_dois]    ; escolher caracter
-    mov bl, [barra_direita_cor]     ; escolher cor (branco)
     int 10h
 
     ret
@@ -340,8 +313,6 @@ print_main_menu:
     print_string 04h, 06h, texto_main_menu          ; print texto main menu
 
     print_string 06h, 06h, texto_jogar              ; print texto jogar
-
-    print_string 08h, 06h, texto_sair_jogo          ; print texto sair do jogo
    
     print_string 12h, 06h, texto_jogador         ; print texto jogador 2
 
@@ -721,7 +692,7 @@ pong_loop:                     ; gera a sensação de movimento
             
         end:                        
             ; Menu do console
-            call menu_console
+            call jogar_pong
 reset_cor_objeto:
     mov al, 1
     mov [cor_do_objeto], al
@@ -761,7 +732,7 @@ start:
     
     call limpar_tela                ; executa a configuração de video inicial
 
-    jmp menu_console
+    jmp jogar_pong
 
 
 times 63*512-($-$$) db 0
