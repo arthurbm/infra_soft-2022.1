@@ -833,7 +833,6 @@ game_won_snake:
     jmp game_won_snake
 
 snake_loop:
-    call limpar_tela
     mov ax, 00h                             ; setar o fundo a cada iteracao
 
     call print_objeto
