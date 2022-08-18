@@ -8,7 +8,6 @@ data:
         objeto_y: dw 35
         cor_do_objeto: db 4
         direcao: db 4
-        win_points: dw 5
 
     ; dados do Pong =================================================================
         TIMER            equ 046Ch      ; Nº de ticks desde a meia-noite
@@ -16,7 +15,8 @@ data:
         game_status db 1                                        ; game_status = 1 - jogando | game_status = 0 - nao ta jogando
         winner_status db 0                                      ; status do vencedor | 1 -> jogador 1, 2 -> jogador 2
         tela_atual db 0                                         ; Status da tela atual | 0-> menu, 1 -> jogo
-        
+        win_points_amount db 02h
+
         ; dados da tela
         tela_largura dw 140h                                    ; janela feita com al = 13h (320x200)
         tela_altura dw 0c8h     
@@ -28,7 +28,6 @@ data:
 
         ; dados da interface 
         texto_jogador_um db '0'                                 ; texto da pontuação do jogador 1
-        texto_jogador_dois db '0'                               ; texto da pontuação do jogador 2
 
         texto_game_over db 'GAME OVER', 0                       ; texto game over
         texto_perdedor db 'VOCE PERDEU', 0                ; texto vencedor 1
@@ -54,13 +53,11 @@ data:
         ; dados das barras
         error_margin dw 5                                      ; margem de erro de colisão da bola e do objeto
 
-
         barra_esquerda_pontos db 0                              ; pontuação do primeiro jogador (esquerda)
         barra_esquerda_X dw 0Ah                                 ; posição X da barra esquerda
         barra_esquerda_Y dw 0Ah                                 ; posição Y da barra esquerda
         barra_esquerda_cor db 15
 
-        barra_direita_pontos db 0                               ; pontuação do segundo jogador (direita)
         barra_direita_X dw 132h                                 ; posição X da barra direita
         barra_direita_Y dw 0A0h                                 ; posição Y da barra direita
         barra_direita_cor db 15
@@ -170,15 +167,6 @@ atualiza_texto_jogador_um:
 
     ret
 
-atualiza_texto_jogador_dois:
-    xor ax, ax
-    mov al, [barra_direita_pontos]
-
-    add al, 48
-    mov [texto_jogador_dois], al
-
-    ret
-
 print_barra_direita:
 
     ; define as coordenadas iniciais da barra direita
@@ -241,7 +229,7 @@ print_game_over_menu:
     mov dl, 06h                                     ; escolher a coluna
     int 10h
 
-    mov al, 01h                                     ; compara o status de vencedor
+    mov al, 00h                                     ; compara o status de vencedor
     cmp [winner_status], al
     je perdedor                                  
 
@@ -424,46 +412,37 @@ pontuar_jogador_um:
 
     ; checa se o jogador dois fez 5 pontos
     mov al, [barra_esquerda_pontos]
-    cmp al, 05h
-    je game_over
-
-    ret
-
-pontuar_jogador_dois:
-    mov al, [barra_direita_pontos]                  ; pontua jogador dois
-    inc al
-    mov [barra_direita_pontos], al
-   
-    ; call reset_bola                                 ; bola volta para o início
-
-    call atualiza_texto_jogador_dois                ; Atualiza a pontuação na tela do jogador 2
-
-    ; checa se o jogador dois fez 5 pontos
-    mov al, [barra_direita_pontos]
-    cmp al, 05h
+    cmp al, [win_points_amount]
     je game_over
 
     ret
 
 game_over:                                          ; quando um jogador fizer 5 pontos
-    mov al, 05h
+    mov al, [win_points_amount]
     cmp [barra_esquerda_pontos], al                 ; se o jogador 1 fez 5 pontos
-    je jogador_um_venceu                            ; o jogador 1 ganhou
-    jne jogador_dois_venceu                         ; se não, o jogador 2 ganhou
 
     jogador_um_venceu:
-        mov byte[winner_status], 01h                ; winner_status = 1
-        jmp continua_game_over                      ; pula para o resto do game over
-    jogador_dois_venceu:
-        mov byte[winner_status], 02h                ; winner status = 2
+        mov byte[winner_status], 00h                ; winner_status = 1
         jmp continua_game_over                      ; pula para o resto do game over
 
     continua_game_over:    
         mov byte [barra_esquerda_pontos], 00h       ; zera os pontos do primeiro jogador
-        mov byte [barra_direita_pontos], 00h        ; zera os pontos do segundo jogador
 
         call atualiza_texto_jogador_um              ; atualiza o texto do jogador 1
-        call atualiza_texto_jogador_dois            ; atualiza o texto do jogador 2
+
+        xor al, al
+        mov [game_status], al                       ; game status = 0 -> o jogo acabou
+
+    ret
+
+game_over_instant:               
+    mov byte[winner_status], 01h                ; winner_status = 1
+    jmp continua_game_over                      ; pula para o resto do game over
+
+    continua_game_over_instant:    
+        mov byte [barra_esquerda_pontos], 00h       ; zera os pontos do primeiro jogador
+
+        call atualiza_texto_jogador_um              ; atualiza o texto do jogador 1
 
         xor al, al
         mov [game_status], al                       ; game status = 0 -> o jogo acabou
@@ -488,7 +467,7 @@ mover_bola:
     sub ax, [bola_size]
     sub ax, [margem_erro]
     cmp [bola_X], ax        
-    jg pontuar_jogador_um      
+    jg game_over_instant     
 
     ; movendo a bola em Y                      
     mov ax, [bola_vel_Y]    
@@ -661,7 +640,7 @@ random_ball_loop:
 
         ; Se bateu no objeto, checa se o jogador 1 ganhou
         mov ax, [barra_esquerda_pontos]
-        cmp ax, [win_points]
+        cmp ax, [win_points_amount]
         je mostra_game_over
 
         call proximo_objeto
