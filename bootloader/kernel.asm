@@ -4,12 +4,14 @@ jmp 0x0000:start
 data:
     ; dados da interface console
 
-        objeto_x: dw 30
-        objeto_y: dw 20
+        objeto_x: dw 100
+        objeto_y: dw 35
         cor_do_objeto: db 4
         direcao: db 4
+        win_points: dw 5
 
     ; dados do Pong =================================================================
+        TIMER            equ 046Ch      ; Nº de ticks desde a meia-noite
         ; dados de game status
         game_status db 1                                        ; game_status = 1 - jogando | game_status = 0 - nao ta jogando
         winner_status db 0                                      ; status do vencedor | 1 -> jogador 1, 2 -> jogador 2
@@ -49,8 +51,9 @@ data:
         bola_vel_X dw 06h                                       ; velocidade X da bola
         bola_vel_Y dw 03h                                       ; velocidade Y da bola
 
-
         ; dados das barras
+        error_margin dw 5                                      ; margem de erro de colisão da bola e do objeto
+
 
         barra_esquerda_pontos db 0                              ; pontuação do primeiro jogador (esquerda)
         barra_esquerda_X dw 0Ah                                 ; posição X da barra esquerda
@@ -107,32 +110,6 @@ data:
 
     call prints                     ; print o texto
 %endmacro
-
-
-print_boundaries:
-    print_top:
-        mov cx, 0
-        mov dx, 0
-        print_obj 0, 0, [tela_largura], 1, [cor_do_objeto]
-
-    
-    print_bottom:
-        mov cx, 0
-        mov dx, 0C7h
-        print_obj 0,  0C7h, [tela_largura], 1, [cor_do_objeto]
-
-    print_left: 
-        mov cx, 0
-        mov dx, 0
-        print_obj 0, 0, 1, [tela_altura], [cor_do_objeto]
-
-    print_right:
-        mov cx, 13Fh
-        mov dx, 0
-        print_obj 13Fh, 0, 1, [tela_altura], [cor_do_objeto]
-
-
-    ret
 
 jogar_pong:
     call limpar_tela
@@ -457,7 +434,7 @@ pontuar_jogador_dois:
     inc al
     mov [barra_direita_pontos], al
    
-    call reset_bola                                 ; bola volta para o início
+    ; call reset_bola                                 ; bola volta para o início
 
     call atualiza_texto_jogador_dois                ; Atualiza a pontuação na tela do jogador 2
 
@@ -648,6 +625,80 @@ mover_barras:               ; move as barras verticalmente
     exit_mov_barra:
         ret
 
+random_ball_loop:
+    mov ax, 00h                           ; setar o fundo a cada iteracao
+
+    call print_objeto
+
+    .checar_objeto:
+        ; mov byte [direcao], bl            ; Atualizar posicao
+
+        ; SE A BOLA PASSAR PELA FRENTE DO OBJETO ELE DAR O JUMP (CONTINUAR O LOOP)
+        ; Check if bola_X colides with objeto_X in a range of +/- error_margin
+        mov ax, [bola_X]
+        add ax, [bola_size]
+        sub ax, [objeto_x]
+        cmp ax, [error_margin]
+        jg exit_colisao_bola
+        ; neg ax
+        ; cmp ax, [error_margin]
+        ; jl exit_colisao_bola
+
+
+        ; SE A BOLA PASSAR POR BAIXO DO OBJETO ELE VAI DAR O JUMP
+        ; Check if bola_y colides with objeto_y in a range of +/- error_margin
+        mov ax, [bola_Y]
+        add ax, [bola_size]
+        sub ax, [objeto_y]
+        cmp ax, [error_margin]
+        jg exit_colisao_bola
+        ; neg ax
+        ; cmp ax, [error_margin]
+        ; jl exit_colisao_bola
+
+        ; Se bateu no objeto, pontua o jogador 1
+        call pontuar_jogador_um
+
+        ; Se bateu no objeto, checa se o jogador 1 ganhou
+        mov ax, [barra_esquerda_pontos]
+        cmp ax, [win_points]
+        je mostra_game_over
+
+        call proximo_objeto
+        exit_colisao_bola:
+
+        ret
+
+    
+
+    proximo_objeto:
+        ; Nao ganhou, entao gere outro objeto
+        call mudar_cor_objeto
+
+        ; Pegar uma posicao pseudoaleatoria para o objeto aparecer a seguir
+        xor ah, ah
+        int 1ah                         ; Pegar os ticks de relogio desde a meia-noite
+        mov ax, dx
+        xor dx, dx
+        mov cx, [tela_largura]
+        div cx                          ; (dx/ax) / cx; ax = quociente, dx = resto
+        mov word [objeto_x], dx
+    
+        xor ah, ah
+        int 1ah                         ; Pegar os ticks de relogio desde a meia-noite
+        mov ax, dx
+        xor dx, dx
+        mov cx, [tela_altura]
+        div cx
+        mov word [objeto_y], dx
+
+    ; delay_loop:                     ; Para não ficar piscando freneticamente
+    ;     mov bx, [TIMER]
+    ;     add bx, 2
+    ;     .delay:
+    ;         cmp [TIMER], bx
+    ;         jl .delay
+
 pong_loop:                     ; gera a sensação de movimento
         xor al , al
 
@@ -680,19 +731,21 @@ pong_loop:                     ; gera a sensação de movimento
 
         call print_UI
 
+        call random_ball_loop
+
         jmp pong_loop 
-    
-        mostra_game_over:
-            call print_game_over_menu
-            jmp pong_loop
-            
-        mostra_main_menu:
-            call print_main_menu
-            jmp pong_loop
             
         end:                        
             ; Menu do console
             call jogar_pong
+
+mostra_game_over:
+            call print_game_over_menu
+            jmp pong_loop
+            
+mostra_main_menu:
+    call print_main_menu
+    jmp pong_loop
 reset_cor_objeto:
     mov al, 1
     mov [cor_do_objeto], al
@@ -716,11 +769,12 @@ mudar_cor_objeto:
     je jump_grey
 
     ret
+
 print_objeto:
     ; Desenhar objeto
     mov cx, [objeto_x]
     mov dx, [objeto_y]
-    print_obj [objeto_x], [objeto_y], 3, 3, [cor_do_objeto]
+    print_obj [objeto_x], [objeto_y], 5, 5, [cor_do_objeto]
 
     ret
 
