@@ -15,7 +15,7 @@ data:
         game_status db 1                                        ; game_status = 1 - jogando | game_status = 0 - nao ta jogando
         winner_status db 0                                      ; status do vencedor | 1 -> jogador 1, 2 -> jogador 2
         tela_atual db 0                                         ; Status da tela atual | 0-> menu, 1 -> jogo
-        win_points_amount db 02h
+        win_points_amount db 05h
 
         ; dados da tela
         tela_largura dw 140h                                    ; janela feita com al = 13h (320x200)
@@ -435,20 +435,6 @@ game_over:                                          ; quando um jogador fizer 5 
 
     ret
 
-game_over_instant:               
-    mov byte[winner_status], 01h                ; winner_status = 1
-    jmp continua_game_over                      ; pula para o resto do game over
-
-    continua_game_over_instant:    
-        mov byte [barra_esquerda_pontos], 00h       ; zera os pontos do primeiro jogador
-
-        call atualiza_texto_jogador_um              ; atualiza o texto do jogador 1
-
-        xor al, al
-        mov [game_status], al                       ; game status = 0 -> o jogo acabou
-
-    ret
-
 mover_bola:
     ; movendo a bola em X
     mov ax, [bola_vel_X]    
@@ -467,7 +453,7 @@ mover_bola:
     sub ax, [bola_size]
     sub ax, [margem_erro]
     cmp [bola_X], ax        
-    jg game_over_instant     
+    jg reset_bola     
 
     ; movendo a bola em Y                      
     mov ax, [bola_vel_Y]    
