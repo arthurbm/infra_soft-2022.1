@@ -30,7 +30,7 @@ data:
         texto_jogador_um db '0'                                 ; texto da pontuação do jogador 1
 
         texto_game_over db 'GAME OVER', 0                       ; texto game over
-        texto_perdedor db 'VOCE PERDEU', 0                ; texto vencedor 1
+        texto_perdedor db 'VOCE GANHOU', 0                      ; texto vencedor 1
         texto_restart db 'RESTART - pressione R', 0             ; texto restart
         texto_return_main_menu db 'MENU - pressione M', 0       ; texto retornar para o main menu
         
