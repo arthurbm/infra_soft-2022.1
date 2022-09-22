@@ -39,7 +39,7 @@ void* fileRead() {
       
       if (file == NULL)
       {
-          fprintf(stderr, "There was an error trying to open the file!\n");
+          fprintf(stderr, "Erro ao abrir o arquivo!\n");
           exit(-1);
       }
       

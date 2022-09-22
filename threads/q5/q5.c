@@ -1,102 +1,155 @@
-// Dining philosophers problem with pthreads
-// Compile: gcc -o q6 q6.c -lpthread
-// Run: ./q6
+#include<stdio.h>
+#include<pthread.h>
+#include<stdlib.h>
+#include<unistd.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <pthread.h>
-#include <unistd.h>
+#define MAX_MEALS 10
+#define MAX_WAIT_TIME 3000000
+#define PHILOSOPHER_NUMBER 7
 
-
-#define N 5 // number of philosophers
 #define THINKING 0
-#define HUNGRY 1
-#define EATING 2
+#define EATING 1
+#define HUNGRY 2
 
-int state[N];
-pthread_mutex_t mutex[N];
+pthread_mutex_t mutex_forks[PHILOSOPHER_NUMBER];
 
-int left_neighbor(int philosopher_number) {
-    return ((philosopher_number + (N - 1)) % N);
-}
+typedef enum { false, true } bool;
 
-int right_neighbor(int philosopher_number) {
-    return ((philosopher_number + 1) % N);
-}
-
-void test(int i) {
-  if (state[i] == HUNGRY && state[left_neighbor(i)] != EATING && state[right_neighbor(i)] != EATING) {
-    state[i] = EATING;
-    pthread_mutex_unlock(&mutex[i]);
-  }
-}
-
-void think(int i) {
-  printf("Philosopher %d is thinking\n", i);
-}
-
-void get_forks(int i) {
-  pthread_mutex_lock(&mutex[i]);
-  pthread_mutex_lock(&mutex[i + 1]);
-  state[i] = HUNGRY;
-  test(i);
-  pthread_mutex_unlock(&mutex[i]);
-  pthread_mutex_unlock(&mutex[i + 1]);
-
-  printf("Philosopher %d has forks\n", i);
-}
-
-void eat(int i) {
-  printf("Philosopher %d is eating\n", i);
-}
-
-void put_forks(int i) {
-  pthread_mutex_lock(&mutex[i]);
-  pthread_mutex_lock(&mutex[i + 1]);
-
-  state[i] = THINKING;
-  test(left_neighbor(i));
-  test(right_neighbor(i));
-
-  pthread_mutex_unlock(&mutex[i + 1]);
-  pthread_mutex_unlock(&mutex[i]);
-
-  printf("Philosopher %d has put forks\n", i);
-}
-
-void *have_dinner(void *thread_id) {
-  int tid = *(int *)thread_id;
-  while (1) {
-    think(tid);
-    get_forks(tid);
-    eat(tid);
-    put_forks(tid);
-  }
-
-  return NULL;
-}
-
-int main(int argc, char *argv[])
+struct TheDiningPhilosophers
 {
-  // pthread_t philosophs[N];
-  pthread_t *philosophs = (pthread_t *)  malloc(N*sizeof(pthread_t)); 
-  int *philosophs_id= (int* ) malloc(N*sizeof(int));  // The thread id is used to handle the algorithm for each thread
+    int state[PHILOSOPHER_NUMBER];
+    pthread_cond_t condition[PHILOSOPHER_NUMBER];
+    long total_wait_time[PHILOSOPHER_NUMBER];
+    long count[PHILOSOPHER_NUMBER];
+};
 
-  for (int i = 0; i < N; i++){
-    philosophs_id[i] = i;
-    if (pthread_create(&philosophs[i],NULL, have_dinner, (void *) &philosophs_id[i]) != 0) {
-        perror("Failed to create thread\n");
+struct TheDiningPhilosophers philosophersObj;
+
+long time_wait_start[PHILOSOPHER_NUMBER];
+
+// Gets the clock time at this moment
+long get_posix_clock_time()
+{
+    struct timespec ts;
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0)
+    {
+        return (long) (ts.tv_sec * 1000000000 + ts.tv_nsec);
     }
-  }
+    return 0;
+}
 
-  for (int i = 0; i < N; i++) {
-    pthread_join(philosophs[i], NULL);
-  }
+bool testRightNeighbour(int i) {
+    return philosophersObj.state[(i + 1) % PHILOSOPHER_NUMBER] != EATING;
+}
 
-  free(philosophs);
-  free(philosophs_id);
+bool testLeftNeighbour(int i) {
+    return philosophersObj.state[(i + PHILOSOPHER_NUMBER - 1) % PHILOSOPHER_NUMBER] != EATING;
+}
 
-  pthread_exit(NULL);
+// Check if neighbours aren't eating and philosopher isn't starving. Change state to eating and signal the condition
+void check_forks(int i)
+{
+    printf("Philosopher %d looking for forks\n", i);
+    if (philosophersObj.state[i] == HUNGRY && testLeftNeighbour(i) && testRightNeighbour(i))
+    {
+        philosophersObj.state[i] = EATING;
 
-  return 0;
+        //wait time is equal to start time - time at this moment
+        time_wait_start[i] += get_posix_clock_time();
+        philosophersObj.total_wait_time[i] += time_wait_start[i];
+
+        // signal that doesn't necessarilly unlock mutex
+        pthread_cond_signal(&philosophersObj.condition[i]);
+    }
+}
+
+void put_forks(int phil_number)
+{
+    static int meals_count = 0;
+
+    pthread_mutex_lock(&mutex_forks[phil_number]);
+
+    philosophersObj.count[phil_number] += 1;
+    philosophersObj.state[phil_number] = THINKING;
+
+    printf("Philosopher %d finish eating\n", phil_number);
+
+    meals_count++;
+    printf("#Eating count = %d\n\n", meals_count);
+    if (meals_count == MAX_MEALS)
+    {
+        exit(0);
+    }
+    check_forks((phil_number + PHILOSOPHER_NUMBER - 1) % PHILOSOPHER_NUMBER);
+    check_forks((phil_number + 1) % PHILOSOPHER_NUMBER);
+    pthread_mutex_unlock(&mutex_forks[phil_number]);
+}
+
+void get_forks(int phil_number)
+{
+    pthread_mutex_lock(&mutex_forks[phil_number]);
+
+    philosophersObj.state[phil_number] = HUNGRY;
+    printf("Philosopher %d is hungry\n", phil_number);
+
+    // saving start time
+    time_wait_start[phil_number] = (-1) * get_posix_clock_time();
+
+    check_forks(phil_number);
+    if (philosophersObj.state[phil_number] != EATING)
+    {
+        pthread_cond_wait(&philosophersObj.condition[phil_number], &mutex_forks[phil_number]);
+    }
+    pthread_mutex_unlock(&mutex_forks[phil_number]);
+}
+
+void think(int phil_number)
+{
+    srand(time(NULL) + phil_number);
+    int think_time = (rand() % 3) + 1;
+    philosophersObj.state[phil_number] = THINKING;
+    printf("Philosopher %d is thinking\n", phil_number);
+    sleep(think_time);
+}
+
+void eat(int phil_number)
+{
+    srand(time(NULL) + phil_number);
+    int eat_time = (rand() % 3) + 1;
+    philosophersObj.state[phil_number] = EATING;
+    printf("Philosopher %d is eating\n", phil_number);
+    sleep(eat_time);
+}
+
+void *philosopher(void *param)
+{
+    int phil_number = *(int *) param;
+    while (1)
+    {
+        think(phil_number);
+        get_forks(phil_number);
+        eat(phil_number);
+        put_forks(phil_number);
+    }
+}
+
+int main()
+{
+    pthread_t tid[PHILOSOPHER_NUMBER];
+    int id[PHILOSOPHER_NUMBER];
+
+    for (int i = 0; i < PHILOSOPHER_NUMBER; i++)
+    {
+        id[i] = i;
+        philosophersObj.state[i] = THINKING;
+        philosophersObj.count[i] = 0;
+        philosophersObj.total_wait_time[i] = 0;
+        time_wait_start[i] = 0;
+        pthread_create(&tid[i], NULL, &philosopher, &id[i]);
+    }
+
+    for (int i = 0; i < PHILOSOPHER_NUMBER; i++)
+    {
+        pthread_join(tid[i], NULL);
+    }
 }

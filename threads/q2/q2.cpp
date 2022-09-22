@@ -2,9 +2,9 @@
 #include <iostream>
 #include <fstream>
 #include <pthread.h>
-#include <chrono>
-#include <thread>
 #include <stdlib.h>
+#include<unistd.h>
+
 
 using namespace std;
 
@@ -31,9 +31,9 @@ void *ferrovia(void *ar)
             argumentos->intersections[i]++;//região critica
             pthread_mutex_unlock(&mutex);
             printf("O trem %d está na intersessão == %d\n",argumentos->trens, i);
-            //esperar 500 milissegundos para terminar
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
-            
+            //esperar 500 milissegundos usando pthreads para terminar a região critica
+            usleep(500000);
+
             printf("O trem == %d terminou sua passagem na interseção %d\n",argumentos->trens, i);
 
             pthread_mutex_lock(&mutex);

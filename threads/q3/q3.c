@@ -10,13 +10,13 @@
 #define N_LEITORAS 5 
 #define N_ESCRITORAS 5
 
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; // mutex para exclusão mútua
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER; 
 int *informacoes = NULL; //'informacoes' é um array dinâmico para armazenar os dados
-int tamanho = 0; //tamanho do array 'informacoes'
+int tamanho = 0; 
 
 void *leitura(void *arg){
-    int thread_id = *((int*)arg);  //'thread_id' é o ID da thread escritora
-    int pos; //variável que indicará qual a posição do banco de informações para acesso e exibição
+    int thread_id = *((int*)arg);  
+    int pos; 
     int i = 0;
     do { //Assim como as threads escritoras, todas threads leitoras funcionaram dentro de um while para que assim elas possam ler o array 'informacoes' continuamente
         pthread_mutex_lock(&mutex); //Travamos o mutex para garantir que uma única thread leitora está escrevendo no banco de Dados
@@ -46,11 +46,11 @@ void *escrita(void *arg){
             i++;
 
         informacoes = (int*) realloc(informacoes, sizeof(int)*(tamanho+1)); //Criamos uma nova posição no banco informacoes
-        informacoes[tamanho] = i; //Armazenamos o valor que geramos na nova posição do banco de informacoes
-        tamanho++; //Aumentamos a variável que indica qual o tamanho do 'informacoes'
+        informacoes[tamanho] = i; //Atribuímos um valor para a nova posição
+        tamanho++; 
         pthread_mutex_unlock(&mutex); //Liberamos o mutex para que outra thread escritora possa acrescentar algo no banco de informacoes
     // Para checar não sendo um um loop infinito, substitua 1 por i != 0
-    } while(i != 0); //Todas threads escritoras funcionaram dentro de um while para que assim elas possam escrever no array 'informacoes' continuamente
+    } while(i != 0); 
 }
 
 int main(){
@@ -75,7 +75,6 @@ int main(){
     }
     pthread_exit(NULL);
 
-    //Libera o vetor de ID's
     for(i = 0; i < N_ESCRITORAS; i++)
         free(idsE[i]);
 
