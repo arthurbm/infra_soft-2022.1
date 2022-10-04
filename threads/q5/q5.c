@@ -135,7 +135,7 @@ void *philosopher(void *param)
 
 int main()
 {
-    pthread_t tid[PHILOSOPHER_NUMBER];
+    pthread_t thread[PHILOSOPHER_NUMBER];
     int id[PHILOSOPHER_NUMBER];
 
     for (int i = 0; i < PHILOSOPHER_NUMBER; i++)
@@ -145,11 +145,11 @@ int main()
         philosophersObj.count[i] = 0;
         philosophersObj.total_wait_time[i] = 0;
         time_wait_start[i] = 0;
-        pthread_create(&tid[i], NULL, &philosopher, &id[i]);
+        pthread_create(&thread[i], NULL, &philosopher, &id[i]);
     }
 
     for (int i = 0; i < PHILOSOPHER_NUMBER; i++)
     {
-        pthread_join(tid[i], NULL);
+        pthread_join(thread[i], NULL);
     }
 }
